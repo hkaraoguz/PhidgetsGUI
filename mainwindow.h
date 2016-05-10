@@ -7,6 +7,7 @@
 #include "phidgetsinterfacekit.h"
 #include "irsensorgraphicsscene.h"
 
+
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
@@ -16,6 +17,7 @@
 #include <QListIterator>
 
 class MotorControlDialog;
+class DigitalIODialog;
 
 namespace Ui {
 class MainWindow;
@@ -35,9 +37,11 @@ private:
     QFutureWatcher<int> fwatcherDevices;
     QFutureWatcher<int> fwatcherMotors;
 
-    QList<PhidgetsMotorControl*> motorControls;
+    QList<QLabel*> irlabels;
 
     MotorControlDialog* motorcontroldialog;
+
+    DigitalIODialog* digitaliodialog;
 
     PhidgetsInterfaceKit* interfacekit;
 
@@ -48,22 +52,18 @@ private:
     IRSensorGraphicsScene* scene;
 
     void initView(int count);
+
+
 private slots:
     void handleMotorControlInit();
     void handleDeviceManagerInit();
-    void handleMotorControlDetached(int serialno);
+   // void handleMotorControlDetached(int serialno);
     void handleMotorControlValues(MotorControlData data);
     void handleInterfaceSensorandInputReadings(QList<QList<QVariant> >readings);
    // void handleMotorCard(int serialno);
-    void on_horSliderVel_valueChanged(int value);
-    void on_horSliderAcc_valueChanged(int value);
-    void on_pushButtonStop1_clicked();
-    void on_horSliderVel2_valueChanged(int value);
-    void on_horSliderAcc2_valueChanged(int value);
-    void on_pushButtonStop2_clicked();
-    void on_pushButtoResetEnc2_clicked();
-    void on_pushButtonResetEnc1_clicked();
+
     void on_actionMotors_triggered();
+    void on_actionDigital_I_O_triggered();
 };
 
 #endif // MAINWINDOW_H

@@ -132,7 +132,7 @@ bool PhidgetsInterfaceKit::initKit()
 
     //Registers a callback that will run if an input changes.
     //Requires the handle for the Phidget, the function that will be called, and an arbitrary pointer that will be supplied to the callback function (may be NULL).
-    CPhidgetInterfaceKit_set_OnInputChange_Handler (ifKit, InputChangeHandler, this);
+  //  CPhidgetInterfaceKit_set_OnInputChange_Handler (ifKit, InputChangeHandler, this);
 
     //Registers a callback that will run if the sensor value changes by more than the OnSensorChange trig-ger.
     //Requires the handle for the IntefaceKit, the function that will be called, and an arbitrary pointer that will be supplied to the callback function (may be NULL).
@@ -232,6 +232,20 @@ double PhidgetsInterfaceKit::calculateAnalogtoDistance(int analogvalue)
    return cms;
 
 }
+QList<int> PhidgetsInterfaceKit::getDigitalOutStates()
+{
+    QList<int> result;
+
+    for(int i = 0; i < this->numSensors; i++)
+    {
+        int state;
+        CPhidgetInterfaceKit_getOutputState(this->ifKit,i,&state);
+        result.append(state);
+    }
+
+    return result;
+}
+
 
 
 PhidgetsInterfaceKit::PhidgetsInterfaceKit(QObject *parent, int serialNo) : QObject(parent)
@@ -246,4 +260,10 @@ PhidgetsInterfaceKit::~PhidgetsInterfaceKit()
 {
     CPhidget_close((CPhidgetHandle)ifKit);
     CPhidget_delete((CPhidgetHandle)ifKit);
+}
+
+void PhidgetsInterfaceKit::handleDigitalOutputToggle(QList<int> values)
+{
+    CPhidgetInterfaceKit_setOutputState(this->ifKit,values[0],values[1]);
+
 }

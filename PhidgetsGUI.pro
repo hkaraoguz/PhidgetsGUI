@@ -18,16 +18,19 @@ SOURCES += main.cpp\
     phidgetsdevicemanager.cpp \
     phidgetsinterfacekit.cpp \
     irsensorgraphicsscene.cpp \
-    motorcontroldialog.cpp
+    motorcontroldialog.cpp \
+    digitaliodialog.cpp
 
 HEADERS  += mainwindow.h \
     phidgetsmotorcontrol.h \
     phidgetsdevicemanager.h \
     phidgetsinterfacekit.h \
     irsensorgraphicsscene.h \
-    motorcontroldialog.h
+    motorcontroldialog.h \
+    digitaliodialog.h
 
 FORMS    += mainwindow.ui \
-    motorcontroldialog.ui
+    motorcontroldialog.ui \
+    digitaliodialog.ui
 
 LIBS += -lphidget21

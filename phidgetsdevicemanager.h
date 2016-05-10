@@ -10,10 +10,15 @@ class PhidgetsDeviceManager : public QObject
 public:
     explicit PhidgetsDeviceManager(QObject *parent = 0);
     ~PhidgetsDeviceManager();
+
     int initDevices();
+
     QList<int> getMotorControlCardSerials();
+
     int getInterfaceKitSerial();
+
     void pushToMotorControlCardSerials(int serial);
+
     void setInterfaceKitSerial(int serial);
 
 private:

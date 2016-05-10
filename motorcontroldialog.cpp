@@ -18,6 +18,11 @@ void MotorControlDialog::appendToMotorControls(PhidgetsMotorControl *motorContro
     this->motorControls.append(motorControl);
 
 }
+QList<PhidgetsMotorControl*> MotorControlDialog::getMotorControls()
+{
+    return this->motorControls;
+
+}
 
 void MotorControlDialog::on_horSliderVel_valueChanged(int value)
 {

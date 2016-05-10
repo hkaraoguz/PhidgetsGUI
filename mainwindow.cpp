@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "motorcontroldialog.h"
+#include "digitaliodialog.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -9,20 +10,28 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
+
+    // Create the Sensor Graphics scene
     scene = new IRSensorGraphicsScene;
 
+    // Set the scene of graphics View as scene
     ui->graphicsViewIR->setScene(scene);
 
-    // Disable the widgets
-  //  ui->tabWidget->setEnabled(false);
-    ui->groupBoxMotor1->setEnabled(false);
-    ui->groupBoxMotor2->setEnabled(false);
+ /******* Create the IR Labels vector to easily change the label with index ******/
+    this->irlabels.push_back(ui->labelIR1Dist);
+    this->irlabels.push_back(ui->labelIR2Dist);
+    this->irlabels.push_back(ui->labelIR3Dist);
+    this->irlabels.push_back(ui->labelIR4Dist);
+    this->irlabels.push_back(ui->labelIR5Dist);
+    this->irlabels.push_back(ui->labelIR6Dist);
+    this->irlabels.push_back(ui->labelIR7Dist);
+    this->irlabels.push_back(ui->labelIR8Dist);
+  /********************************************************************************/
 
     // This is the main device manager
     deviceManager = new PhidgetsDeviceManager(this);
 
-    // Connect the main device (this is obsolete)
-    //connect(deviceManager,SIGNAL(motorCard(int)),this,SLOT(handleMotorCard(int)));
 
     // Init devices-> This is already using threads so we don't need to generate a thread for this
     deviceManager->initDevices();
@@ -31,66 +40,74 @@ MainWindow::MainWindow(QWidget *parent) :
     QTimer::singleShot(5000,this,SLOT(handleDeviceManagerInit()));
 
 
-    // QFuture<int> future = QtConcurrent::run(deviceManager,&PhidgetsDeviceManager::initDevices);
 
-    //  fwatcherDevices.setFuture(future);
-
-    //  connect(&fwatcherDevices, SIGNAL(finished()), this, SLOT(handleDeviceManagerInit()));
-
-
+}
+MainWindow::~MainWindow()
+{
+    // this->motorControl->setMotorVelocityandAcceleration(0,0);
+    delete ui;
 }
 // Now the devices are initialized
 void MainWindow::handleDeviceManagerInit()
 {
 
 
-    qDebug()<<"Devices are initialized";
+    qDebug()<<"Devices should be initialized";
 
+
+
+    /// Get the serial numbers of motor cards -> Currently a maximum of 2 cards are supported
     QList<int> motorcardserials = this->deviceManager->getMotorControlCardSerials();
-    int interfaceserial = this->deviceManager->getInterfaceKitSerial();
+
 
     motorcontroldialog = new MotorControlDialog(this);
 
-    motorcontroldialog->show();
+  //  motorcontroldialog->show();
 
     foreach (int serial, motorcardserials)
     {
         PhidgetsMotorControl* motorControl = new PhidgetsMotorControl(this,serial);
 
-      // connect(motorControl,SIGNAL(motorControlDetached(int)), this, SLOT(handleMotorControlDetached(int)));
-
-      //  connect(motorControl,SIGNAL(motorControlValues(MotorControlData)),this,SLOT(handleMotorControlValues(MotorControlData)));
-
-        this->motorControls.push_back(motorControl);
 
         if(motorControl->initMotorCard())
         {
+          //  this->motorControls.push_back(motorControl);
 
             connect(motorControl,SIGNAL(motorControlDetached(int)), this->motorcontroldialog, SLOT(handleMotorControlDetached(int)));
 
             connect(motorControl,SIGNAL(motorControlValues(MotorControlData)),this->motorcontroldialog,SLOT(handleMotorControlValues(MotorControlData)));
 
             this->motorcontroldialog->appendToMotorControls(motorControl);
+
             this->motorcontroldialog->initView();
-           // handleMotorControlInit();
+
         }
 
-        //  QFuture<bool> future = QtConcurrent::run(motorControl,&PhidgetsMotorControl::initMotorCard);
-
-        //  fwatcher.setFuture(future);
-
-        //  connect(&fwatcher, SIGNAL(finished()), this, SLOT(handleMotorControlInit()));
 
     }
 
+    if(this->motorcontroldialog->getMotorControls().size() > 0)
+    {
+        this->motorcontroldialog->show();
+    }
+
+
+    // Get the serial number of the interface kit
+    int interfaceserial = this->deviceManager->getInterfaceKitSerial();
 
 
     if(interfaceserial > 0)
     {
         interfacekit = new PhidgetsInterfaceKit(this, interfaceserial);
+        digitaliodialog = new DigitalIODialog(this);
         if(interfacekit->initKit())
         {
             connect(interfacekit,SIGNAL(sensorAndInputReadings(QList<QList< QVariant > >)),this,SLOT(handleInterfaceSensorandInputReadings(QList<QList< QVariant > >)));
+            connect(interfacekit,SIGNAL(sensorAndInputReadings(QList<QList< QVariant > >)),this->digitaliodialog,SLOT(handleInterfaceSensorandInputReadings(QList<QList< QVariant > >)));
+
+            connect(this->digitaliodialog,SIGNAL(digitalInputToggle(QList<int>)),interfacekit,SLOT(handleDigitalOutputToggle(QList<int>)));
+
+            this->digitaliodialog->show();
         }
 
 
@@ -116,10 +133,13 @@ void MainWindow::handleInterfaceSensorandInputReadings(QList< QList<QVariant> > 
 
     QList<double> doubledistances;
 
+    int count = 0;
+
     foreach (QVariant dist, distanceReadings) {
 
        // qDebug()<<"I am here"<<dist;
-
+        this->irlabels[count]->setText(QString::number(dist.toDouble()));
+        count +=1;
         doubledistances.append(dist.toDouble());
         this->scene->drawDistanceSensors(doubledistances);
         ui->graphicsViewIR->update();
@@ -131,7 +151,7 @@ void MainWindow::handleInterfaceSensorandInputReadings(QList< QList<QVariant> > 
 }
 void MainWindow::handleMotorControlValues(MotorControlData data)
 {
-    PhidgetsMotorControl* obj = qobject_cast<PhidgetsMotorControl*>(sender());
+ /*   PhidgetsMotorControl* obj = qobject_cast<PhidgetsMotorControl*>(sender());
 
     int count = 0;
 
@@ -165,45 +185,10 @@ void MainWindow::handleMotorControlValues(MotorControlData data)
     }
 
 
-
-
-}
-void MainWindow::handleMotorControlDetached(int serialno)
-{
-    int count = 0;
-
-    QMutableListIterator<PhidgetsMotorControl*> iterator(this->motorControls);
-
-    while(iterator.hasNext()) {
-
-        PhidgetsMotorControl* obj = iterator.next();
-
-        if(obj->getSerialNo() == serialno)
-        {
-
-            if(count == 0)
-            {
-                ui->groupBoxMotor1->setDisabled(true);
-
-
-            }
-            else
-            {
-                ui->groupBoxMotor2->setDisabled(true);
-
-            }
-
-
-            iterator.remove();
-
-            obj->deleteLater();
-        }
-
-        count++;
-
-    }
+*/
 
 }
+
 /*void MainWindow::handleMotorCard(int serialno)
 {
     PhidgetsMotorControl* motorControl = new PhidgetsMotorControl(this,serialno);
@@ -222,39 +207,23 @@ void MainWindow::handleMotorControlDetached(int serialno)
 
 }*/
 
-MainWindow::~MainWindow()
-{
-    // this->motorControl->setMotorVelocityandAcceleration(0,0);
-    delete ui;
-}
+
 void MainWindow::handleMotorControlInit()
 {
 
     qDebug()<<"Motor Control Card Initialized";
 
-    initView(this->motorControls.size());
+  //  initView(this->motorControls.size());
 
 }
 
-void MainWindow::on_horSliderVel_valueChanged(int value)
-{
-    this->motorControls[0]->setMotorVelocityandAcceleration(value,ui->horSliderAcc->value());
-    ui->lEditVel->setText(QString::number(ui->horSliderVel->value()));
 
-}
-
-void MainWindow::on_horSliderAcc_valueChanged(int value)
-{
-    this->motorControls[0]->setMotorVelocityandAcceleration(ui->horSliderVel->value(),value);
-    ui->lEditAcc->setText(QString::number(ui->horSliderAcc->value()));
-
-}
 void MainWindow::initView(int count)
 {
     ui->tabWidget->setEnabled(true);
 
 
-    if(count == 1)
+ /*   if(count == 1)
     {
         ui->horSliderAcc->setMaximum(100);
         ui->horSliderAcc->setMinimum(0);
@@ -294,55 +263,10 @@ void MainWindow::initView(int count)
         ui->groupBoxMotor2->setEnabled(true);
 
 
-    }
+    }*/
 }
 
-void MainWindow::on_pushButtonStop1_clicked()
-{
 
-    this->motorControls[0]->setMotorVelocityandAcceleration(0,0);
-    ui->horSliderAcc->setValue(50);
-    ui->horSliderVel->setValue(0);
-
-}
-
-void MainWindow::on_horSliderVel2_valueChanged(int value)
-{
-
-    this->motorControls[1]->setMotorVelocityandAcceleration(value,ui->horSliderAcc2->value());
-    ui->lEditVel2->setText(QString::number(ui->horSliderVel2->value()));
-
-}
-
-void MainWindow::on_horSliderAcc2_valueChanged(int value)
-{
-
-    this->motorControls[1]->setMotorVelocityandAcceleration(ui->horSliderVel2->value(),value);
-    ui->lEditAcc2->setText(QString::number(ui->horSliderAcc2->value()));
-
-}
-
-void MainWindow::on_pushButtonStop2_clicked()
-{
-
-    this->motorControls[1]->setMotorVelocityandAcceleration(0,0);
-    ui->horSliderAcc->setValue(50);
-    ui->horSliderVel->setValue(0);
-
-
-}
-
-void MainWindow::on_pushButtoResetEnc2_clicked()
-{
-    this->motorControls[1]->resetEncoder();
-
-}
-
-void MainWindow::on_pushButtonResetEnc1_clicked()
-{
-    this->motorControls[0]->resetEncoder();
-
-}
 
 void MainWindow::on_actionMotors_triggered()
 {
@@ -354,4 +278,16 @@ void MainWindow::on_actionMotors_triggered()
 
     }
   }
+}
+
+void MainWindow::on_actionDigital_I_O_triggered()
+{
+    if(this->digitaliodialog)
+    {
+        if(!this->digitaliodialog->isVisible())
+        {
+            this->digitaliodialog->show();
+        }
+    }
+
 }

@@ -12,10 +12,16 @@ class PhidgetsInterfaceKit : public QObject
 {
     Q_OBJECT
 public:
+
     explicit PhidgetsInterfaceKit(QObject *parent = 0, int serialNo = -1);
+
     ~PhidgetsInterfaceKit();
+
     bool initKit();
+    QList<int> getDigitalOutStates();
+
     static double calculateAnalogtoDistance(int analogvalue);
+
 private:
     CPhidgetInterfaceKitHandle ifKit;
     int serialno;
@@ -31,6 +37,7 @@ signals:
     //void digitalInputChanged(QList<int> indexandvalue);
 
 public slots:
+    void handleDigitalOutputToggle(QList<int> values);
 
 private slots:
     void handleDataRefreshTimeout();

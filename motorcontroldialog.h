@@ -15,7 +15,10 @@ class MotorControlDialog : public QDialog
 
 public:
     explicit MotorControlDialog(QWidget *parent = 0);
+
     void appendToMotorControls(PhidgetsMotorControl* motorControl);
+    QList<PhidgetsMotorControl*> getMotorControls();
+
     ~MotorControlDialog();
 
     void initView();
